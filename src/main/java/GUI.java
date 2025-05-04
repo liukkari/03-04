@@ -10,7 +10,9 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 public class GUI extends Application {
-    private TranslationQueries queries = new TranslationQueries();
+    private static final HashMap<String, String> LANGUAGE_CODES = new HashMap<>();
+    private final TranslationQueries queries = new TranslationQueries();
+
     private Label appTitle;
     private ComboBox<String> comboBox;
     private TextField titleTextField;
@@ -19,15 +21,27 @@ public class GUI extends Application {
     private Button saveButton;
     private Button fetchButton;
 
-    private static final HashMap<String, String> LANGUAGE_CODES = new HashMap<>();
-
-    @Override
-    public void start(Stage stage) {
+    static {
         LANGUAGE_CODES.put("English", "en");
         LANGUAGE_CODES.put("French", "fr");
         LANGUAGE_CODES.put("Spanish", "es");
         LANGUAGE_CODES.put("Japanese", "ja");
+    }
 
+    @Override
+    public void start(Stage stage) {
+        initializeUIComponents();
+        configureEventHandlers();
+
+        VBox layout = new VBox(10, appTitle, comboBox, titleListView, titleTextField, translationTextField, saveButton, fetchButton);
+        Scene scene = new Scene(layout, 400, 300);
+
+        stage.setTitle("Maria Aalto");
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    private void initializeUIComponents() {
         appTitle = new Label("Employee Job Titles");
 
         comboBox = new ComboBox<>(FXCollections.observableArrayList(LANGUAGE_CODES.keySet()));
@@ -43,29 +57,23 @@ public class GUI extends Application {
 
         saveButton = new Button("Add/Update Translation");
         fetchButton = new Button("Fetch Translation");
+    }
 
-        saveButton.setOnAction(e -> {
-            String selectedLanguageCode = LANGUAGE_CODES.get(comboBox.getValue());
-            queries.saveTranslation(titleTextField.getText(), selectedLanguageCode, translationTextField.getText());
-        });
+    private void configureEventHandlers() {
+        saveButton.setOnAction(e -> saveTranslation());
+        fetchButton.setOnAction(e -> fetchTranslations());
+    }
 
-        fetchButton.setOnAction(e -> {
-            String selectedLanguageCode = LANGUAGE_CODES.get(comboBox.getValue());
-            HashMap<String, String> translations = queries.getTranslations(selectedLanguageCode);
+    private void saveTranslation() {
+        String selectedLanguageCode = LANGUAGE_CODES.get(comboBox.getValue());
+        queries.saveTranslation(titleTextField.getText(), selectedLanguageCode, translationTextField.getText());
+    }
 
-            titleListView.getItems().clear();
-            for (String key : translations.keySet()) {
-                String formattedTranslation = key + ": " + translations.get(key);
-                titleListView.getItems().add(formattedTranslation);
-            }
-        });
+    private void fetchTranslations() {
+        String selectedLanguageCode = LANGUAGE_CODES.get(comboBox.getValue());
+        HashMap<String, String> translations = queries.getTranslations(selectedLanguageCode);
 
-        VBox layout = new VBox(10);
-        layout.getChildren().addAll(appTitle, comboBox, titleListView, titleTextField, translationTextField, saveButton, fetchButton);
-
-        Scene scene = new Scene(layout, 400, 300);
-        stage.setTitle("Maria Aalto");
-        stage.setScene(scene);
-        stage.show();
+        titleListView.getItems().clear();
+        translations.forEach((key, value) -> titleListView.getItems().add(key + ": " + value));
     }
 }
